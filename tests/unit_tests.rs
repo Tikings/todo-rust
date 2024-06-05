@@ -48,3 +48,4 @@ fn create_todo_element_empty_string() {
     let element = TodoElement::new( "".to_string(),  Priority::Low).unwrap_err();
     assert_eq!(element, CreationError::EmptyString)
 }
+
