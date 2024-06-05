@@ -80,6 +80,7 @@ impl fmt::Display for TodoElement {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct TodoList {
     pub list : Vec<TodoElement>, 
     pub path : String, 
@@ -176,8 +177,8 @@ impl TodoList {
 
         Ok(TodoList{
             list : list,
-            path : format!("{}/save.todo",dir_path),
-            path_backup : format!("{}/backup.todo",dir_path),
+            path : format!("{}/.todo/save.todo",dir_path),
+            path_backup : format!("{}/.todo/backup.todo",dir_path),
         })
     }
 

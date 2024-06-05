@@ -1,4 +1,4 @@
-use todo::{self, CreationError, Priority, TodoElement};
+use todo::{self, CreationError, Priority, TodoElement, TodoList};
 use chrono::prelude::*;
 
 #[test]
@@ -47,5 +47,15 @@ fn create_todo_element() {
 fn create_todo_element_empty_string() {
     let element = TodoElement::new( "".to_string(),  Priority::Low).unwrap_err();
     assert_eq!(element, CreationError::EmptyString)
+}
+
+#[test]
+fn new_todo_list() {
+    let todo_list = TodoList::new("tests/test_todo").unwrap();
+    assert_eq!(todo_list, TodoList {
+        list : Vec::new(),
+        path : "tests/test_todo/.todo/save.todo".to_string(),
+        path_backup : "tests/test_todo/.todo/backup.todo".to_string(),
+    })
 }
 
