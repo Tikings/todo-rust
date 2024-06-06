@@ -1,9 +1,19 @@
 
 use chrono::prelude::*;
-use std::{fmt,
-     fs:: {metadata, DirBuilder,OpenOptions, File},
-    fmt::Display,
+use std::{fmt::{self, Display},
+     fs:: {self, metadata, DirBuilder, File, OpenOptions},
+     io::BufWriter,
 };
+use serde_json;
+use serde::{self, ser::SerializeStruct, Serialize};
+
+// ____________________ Guide lines ____________________
+
+//TODO : Fix the path management in the file creation (to be able to use this CLI tool on windows)
+
+// To save the files : 
+// Option 1 : Serialise and desirialize all the list -> Do modification on the objects on rust 
+// It will be easier to have the different versions of the todo to allow and undo of the list
 
 
 // ____________________ Error types ____________________
@@ -27,17 +37,23 @@ impl Display for CreationError {
     } 
 }
 
+#[derive(Debug)]
 pub enum TodoFileError {
+    OpenFile(std::io::Error),
+    ClearingError,
+    CopyError,
+    WriteError(serde_json::Error),
 }
 
 // ____________________ Structs and enums ____________________
 
-#[derive(PartialEq, PartialOrd, Debug)]
+#[derive(PartialEq, PartialOrd, Debug, Serialize)]
 pub enum Priority {
     High, 
     Medium, 
     Low, 
 }
+
 #[derive(PartialEq, Debug)]
 pub struct TodoElement {
     pub content : String,
@@ -77,6 +93,19 @@ impl fmt::Display for TodoElement {
         }
 
         write!(f, "{} {} | {}",checkbox, self.content,self.created)
+    }
+}
+
+impl serde::Serialize for TodoElement {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+                let mut s = serializer.serialize_struct("TodoElement", 4)?;
+                s.serialize_field("content", &self.content)?;
+                s.serialize_field("priority", &self.priority)?;
+                s.serialize_field("status", &self.status)?;
+                s.serialize_field("created", &self.created)?;
+                s.end()
     }
 }
 
@@ -177,9 +206,96 @@ impl TodoList {
 
         Ok(TodoList{
             list : list,
-            path : format!("{}/.todo/save.todo",dir_path),
-            path_backup : format!("{}/.todo/backup.todo",dir_path),
+            path : format!("{}/save.todo",path_todo),
+            path_backup : format!("{}/backup.todo",path_todo),
         })
     }
 
+
+    pub fn add(&self, args : &[String]) {
+        todo!();
+    }
+
+    pub fn remove(&self, args : &[String]) {
+        todo!();
+    }
+
+
+    pub fn done(&self, args : &[String]) {
+        todo!();
+    }
+
+    pub fn sort(&self) {
+        todo!();
+    }
+
+
+    pub fn reset(&self) {
+        todo!();
+    }
+
+    pub fn restore(&self) {
+        todo!();
+    }
+
+    pub fn write_file(&self) -> Result<(),TodoFileError>{
+        // Function that write the content of the todo list to the file ih the self.path location
+
+        let save_file : File;
+        match OpenOptions::new()
+        .write(true)
+        .open(&self.path) {
+            Ok(f) => save_file = f,
+            Err(e) => return Err(TodoFileError::OpenFile(e)),
+        }
+
+        let buffer = BufWriter::new(&save_file);
+
+        match serde_json::to_writer(buffer, &self) {
+            Ok(_) => (),
+            Err(e) => return Err(TodoFileError::WriteError(e)),
+        }
+
+        Ok(())
+        
+    }
+
+    pub fn backup_data(&self) -> Result<(), TodoFileError> {
+
+        //Opening backup file
+        let backup_file : File; 
+
+        let result_backup_file = OpenOptions::new()
+        .write(true)
+        .open(&self.path_backup);
+    
+        match result_backup_file {
+            Ok(f) => backup_file = f,
+            Err(e) => return Err(TodoFileError::OpenFile(e)),
+        };
+
+        // Clearing the back_up file
+        match backup_file.set_len(0) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::ClearingError),
+        };
+
+        // Copying file content to the other file
+        match fs::copy(&self.path,&self.path_backup) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::CopyError),
+        }
+
+        Ok(())
+    }
+}
+
+impl serde::Serialize for TodoList {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+                let mut s = serializer.serialize_struct("TodoList", 1)?;
+                s.serialize_field("list", &self.list)?;
+                s.end()
+    }
 }
