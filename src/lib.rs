@@ -1,3 +1,4 @@
+pub mod cli_main;
 
 use chrono::prelude::*;
 use std::{fmt::{self, Display},
@@ -7,6 +8,7 @@ use std::{fmt::{self, Display},
 use serde_json;
 use serde::{self, ser::SerializeStruct, Serialize};
 
+
 // ____________________ Guide lines ____________________
 
 //TODO : Fix the path management in the file creation (to be able to use this CLI tool on windows)
@@ -14,6 +16,9 @@ use serde::{self, ser::SerializeStruct, Serialize};
 // To save the files : 
 // Option 1 : Serialise and desirialize all the list -> Do modification on the objects on rust 
 // It will be easier to have the different versions of the todo to allow and undo of the list
+
+// Make a clear file function taking a path as an argument
+// Change the access of the backup and write functions
 
 
 // ____________________ Error types ____________________
@@ -212,30 +217,112 @@ impl TodoList {
     }
 
 
-    pub fn add(&self, args : &[String]) {
-        todo!();
+    pub fn add(&self, args : &[String]) -> Result<(), TodoFileError> {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        // Adding a new TodoElementTo the list from the arguments
+        // Arguments are going to look like : todo add "Task1" -p m -> Add the Task 1 of priority medium ( -p is optional here -> Default : medium)
+        
+        Ok(())
+        
     }
 
-    pub fn remove(&self, args : &[String]) {
-        todo!();
+    pub fn remove(&self, args : &[String]) -> Result<(), TodoFileError> {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        Ok(())
     }
 
 
-    pub fn done(&self, args : &[String]) {
-        todo!();
+    pub fn done(&self, args : &[String]) -> Result<(), TodoFileError>  {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        Ok(())
     }
 
-    pub fn sort(&self) {
-        todo!();
+    pub fn sort(&self) -> Result<(), TodoFileError>  {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        Ok(())
     }
 
 
-    pub fn reset(&self) {
-        todo!();
+    pub fn reset(&self) -> Result<(), TodoFileError> {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        //Opening file
+        let save_file : File; 
+
+        let result_save_file = OpenOptions::new()
+        .write(true)
+        .open(&self.path);
+    
+        match result_save_file {
+            Ok(f) => save_file = f,
+            Err(e) => return Err(TodoFileError::OpenFile(e)),
+        };
+
+        // Clearing the save file
+        match save_file.set_len(0) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::ClearingError),
+        };
+
+        Ok(())
     }
 
-    pub fn restore(&self) {
-        todo!();
+    pub fn restore(&self) -> Result<(),TodoFileError> {
+
+        //Opening backup file
+        let save_file : File; 
+
+        let result_save_file = OpenOptions::new()
+        .write(true)
+        .open(&self.path);
+    
+        match result_save_file {
+            Ok(f) => save_file = f,
+            Err(e) => return Err(TodoFileError::OpenFile(e)),
+        };
+
+        // Clearing the back_up file
+        match save_file.set_len(0) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::ClearingError),
+        };
+
+        // Copying file content to the other file
+        match fs::copy(&self.path_backup,&self.path) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::CopyError),
+        }
+
+        Ok(())
     }
 
     pub fn write_file(&self) -> Result<(),TodoFileError>{

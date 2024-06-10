@@ -1,18 +1,24 @@
-use todo::{TodoElement, TodoList, Priority};
+// use todo::{TodoElement, TodoList, Priority};
+// use std::env::args;
+use todo::cli_main;
 
 fn main() {
 
-    let list_element = vec![
-        TodoElement {content  : "Task 1".to_string(), priority :  Priority::High, status : false, created : "26-05-2024".to_string()},
-        TodoElement {content  : "Task 2".to_string(), priority :  Priority::High, status : false, created : "23-06-2024".to_string()},
-        TodoElement {content  : "Task 3".to_string(), priority :  Priority::High, status : false, created : "22-01-2022".to_string()},
-    ];
-    let todo_list = TodoList{
-        list : list_element,
-        path : "tests/test_todo/.todo/save.todo".to_string(),
-        path_backup :  "tests/test_todo/.todo/backup.todo".to_string(),
-    };
+    // let args : Vec<String> = args().collect();
+    // println!("{:?}", &args[1..]);
 
-    todo_list.write_file().expect("Didn't saved the file... ");
-    todo_list.backup_data().expect("Problem during backup");
+    let cmd = cli_main::generate_command();
+    // let matches = cmd.try_get_matches_from(&args[1..]).unwrap_or_else(|e| {
+    //     e.exit();
+    // });
+
+    let matches = cmd.get_matches(); 
+
+    println!("matches : {:?}", matches);
+
+    let add_args : &String = matches.get_one("delete").unwrap();
+    
+    println!("{:?}", add_args);
+    
 }
+
