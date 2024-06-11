@@ -60,3 +60,8 @@ TODO : {Parent directory}
 
 ```
 => In this format the task that are done will not be displayed. 
+
+
+The raw data : 
+
+{"list":[{"content":"Task 1","priority":"High","status":false,"created":"26-05-2024"},{"content":"Task 2","priority":"High","status":false,"created":"23-06-2024"},{"content":"Task 3","priority":"High","status":false,"created":"22-01-2022"}]}

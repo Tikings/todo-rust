@@ -3,10 +3,11 @@ pub mod cli_main;
 use chrono::prelude::*;
 use std::{fmt::{self, Display},
      fs:: {self, metadata, DirBuilder, File, OpenOptions},
-     io::BufWriter,
+     io::{BufReader, BufWriter},
 };
 use serde_json;
-use serde::{self, ser::SerializeStruct, Serialize};
+use serde::{self, ser::SerializeStruct, Deserialize, Serialize};
+use std::env::args;
 
 
 // ____________________ Guide lines ____________________
@@ -20,6 +21,7 @@ use serde::{self, ser::SerializeStruct, Serialize};
 // Make a clear file function taking a path as an argument
 // Change the access of the backup and write functions
 
+// TODO : Change the display function for the TodoList 
 
 // ____________________ Error types ____________________
 
@@ -52,14 +54,14 @@ pub enum TodoFileError {
 
 // ____________________ Structs and enums ____________________
 
-#[derive(PartialEq, PartialOrd, Debug, Serialize)]
+#[derive(PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
 pub enum Priority {
     High, 
     Medium, 
     Low, 
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Deserialize, Serialize)]
 pub struct TodoElement {
     pub content : String,
     pub priority : Priority,
@@ -101,20 +103,9 @@ impl fmt::Display for TodoElement {
     }
 }
 
-impl serde::Serialize for TodoElement {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer {
-                let mut s = serializer.serialize_struct("TodoElement", 4)?;
-                s.serialize_field("content", &self.content)?;
-                s.serialize_field("priority", &self.priority)?;
-                s.serialize_field("status", &self.status)?;
-                s.serialize_field("created", &self.created)?;
-                s.end()
-    }
-}
 
-#[derive(Debug, PartialEq)]
+// #[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Serialize,Deserialize)]
 pub struct TodoList {
     pub list : Vec<TodoElement>, 
     pub path : String, 
@@ -375,14 +366,35 @@ impl TodoList {
 
         Ok(())
     }
+
+    pub fn from_data(path : String) -> Result<Self, TodoFileError> {
+
+        let save_file : File;
+        match OpenOptions::new()
+        .read(true)
+        .open(path) {
+            Ok(f) => save_file = f,
+            Err(e) => return Err(TodoFileError::OpenFile(e)),
+        }
+
+        let buf  = BufReader::new(save_file);
+        let todo= serde_json::from_reader(buf).unwrap();
+        
+        Ok(todo)
+
+    }
 }
 
-impl serde::Serialize for TodoList {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer {
-                let mut s = serializer.serialize_struct("TodoList", 1)?;
-                s.serialize_field("list", &self.list)?;
-                s.end()
+impl fmt::Display for TodoList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
+        let mut output = String::new();
+        for element in self.list.iter() {
+            let to_push = format!("{} \n", element);
+            output.push_str(&to_push);
+        }
+
+        let write : String = format!("{}", output);
+        write!(f,"{}",write)
     }
 }
