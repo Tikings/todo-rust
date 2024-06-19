@@ -3,11 +3,12 @@ pub mod cli_main;
 use chrono::prelude::*;
 use std::{fmt::{self, Display},
      fs:: {self, metadata, DirBuilder, File, OpenOptions},
-     io::{BufReader, BufWriter},
+     io::{BufReader, BufWriter, Stdout}, 
 };
+
 use serde_json;
-use serde::{self, ser::SerializeStruct, Deserialize, Serialize};
-use std::env::args;
+use serde::{self, Deserialize, Serialize};
+// use std::env::args;
 
 
 // ____________________ Guide lines ____________________
@@ -22,6 +23,11 @@ use std::env::args;
 // Change the access of the backup and write functions
 
 // TODO : Change the display function for the TodoList 
+
+//TODO : Find a way to sort the element before displaying them. 
+// The different type of sort : 
+// - Default : Date
+// - By priority
 
 // ____________________ Error types ____________________
 
@@ -50,11 +56,12 @@ pub enum TodoFileError {
     ClearingError,
     CopyError,
     WriteError(serde_json::Error),
+    Modify(String)
 }
 
 // ____________________ Structs and enums ____________________
 
-#[derive(PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, PartialOrd, Debug, Serialize, Deserialize, Ord, Eq)]
 pub enum Priority {
     High, 
     Medium, 
@@ -208,7 +215,7 @@ impl TodoList {
     }
 
 
-    pub fn add(&self, args : &[String]) -> Result<(), TodoFileError> {
+    pub fn add(mut self, content : String , priority : String) -> Result<(), TodoFileError> {
 
         // Backup data before reset
         match self.backup_data() {
@@ -218,12 +225,51 @@ impl TodoList {
 
         // Adding a new TodoElementTo the list from the arguments
         // Arguments are going to look like : todo add "Task1" -p m -> Add the Task 1 of priority medium ( -p is optional here -> Default : medium)
+
+        let lower_priority = priority.to_lowercase();
+        let parsed_priority : Priority= match lower_priority.as_str() {
+            "high" | "h" => Priority::High ,
+            "low" | "l" => Priority::Low ,
+            _ => Priority::Medium,
+        };
+
+        let element_to_add = TodoElement::new(content, parsed_priority).unwrap();
+
+        self.list.push(element_to_add);
         
         Ok(())
         
     }
 
-    pub fn remove(&self, args : &[String]) -> Result<(), TodoFileError> {
+    pub fn remove(&mut self,  index : usize) -> Result<(), TodoFileError> {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+        
+        self.list.remove(index);
+        
+
+        Ok(())
+    }
+
+
+    pub fn done(&mut self,  index : usize) -> Result<(), TodoFileError>  {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        self.list[index].status = true;
+
+        Ok(())
+    }
+
+    pub fn display_by_date(&self) -> Result<(), TodoFileError>  {
 
         // Backup data before reset
         match self.backup_data() {
@@ -235,18 +281,7 @@ impl TodoList {
     }
 
 
-    pub fn done(&self, args : &[String]) -> Result<(), TodoFileError>  {
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
-
-        Ok(())
-    }
-
-    pub fn sort(&self) -> Result<(), TodoFileError>  {
+    pub fn display_by_priority(&self) -> Result<(), TodoFileError>  {
 
         // Backup data before reset
         match self.backup_data() {
@@ -259,6 +294,7 @@ impl TodoList {
 
 
     pub fn reset(&self) -> Result<(), TodoFileError> {
+        // Reset the todo list by removing the data from the save.todo file.
 
         // Backup data before reset
         match self.backup_data() {
@@ -288,6 +324,7 @@ impl TodoList {
     }
 
     pub fn restore(&self) -> Result<(),TodoFileError> {
+        // Restore the previous todo list from the backup file by copying its content to the save file.
 
         //Opening backup file
         let save_file : File; 
@@ -339,6 +376,7 @@ impl TodoList {
     }
 
     pub fn backup_data(&self) -> Result<(), TodoFileError> {
+        // Back up the data to a "backup.todo" file.
 
         //Opening backup file
         let backup_file : File; 
@@ -368,6 +406,7 @@ impl TodoList {
     }
 
     pub fn from_data(path : String) -> Result<Self, TodoFileError> {
+        // Function that retrieve the todo list from the json formated data of the save.todo file
 
         let save_file : File;
         match OpenOptions::new()
@@ -383,6 +422,16 @@ impl TodoList {
         Ok(todo)
 
     }
+
+    pub fn sort_by_date(&mut self){
+        // Function that sort the list field by date.
+        self.list.sort_by(|a, b| a.created.cmp(&b.created))
+    }
+
+    pub fn sort_by_priority(&mut self) {
+        self.list.sort_by(|a,b| a.priority.cmp(&b.priority))
+    }
+
 }
 
 impl fmt::Display for TodoList {
