@@ -3,7 +3,7 @@ pub mod cli_main;
 use chrono::prelude::*;
 use std::{fmt::{self, Display},
      fs:: {self, metadata, DirBuilder, File, OpenOptions},
-     io::{BufReader, BufWriter, Stdout}, 
+     io::{self, BufReader, BufWriter, Write }, 
 };
 
 use serde_json;
@@ -276,6 +276,46 @@ impl TodoList {
             Ok(_) => (),
             Err(e) => return Err(e),
         }
+        
+        let stdout = io::stdout();
+        let mut buf = BufWriter::new(stdout);
+        
+        // Data to display in the terminal
+        let mut data : String = String::from(
+        "TO-DO _____\n"
+        );
+
+        // Done tasks
+        let mut done_tasks : Vec<&TodoElement> = Vec::new(); 
+        // Undone tasks 
+        let mut undone_tasks : Vec<&TodoElement> = Vec::new();
+        
+        // Sorting the different task in the 2 lists
+        for todo in self.list.iter() {
+            if todo.status {
+                done_tasks.push(todo); 
+            } else {
+                undone_tasks.push(todo);
+            }
+        }
+
+        // Sorting the undone tasks by date
+        undone_tasks.sort_by(|a ,b| a.created.cmp(&b.created));
+        
+        for task in undone_tasks.iter() {
+            data = format!("{} \n {}", data, task)
+        }
+        
+        data = format!(" {} \n {}",data ,"\n DONE _____ \n");
+
+        for task in done_tasks.iter() {
+            data = format!("{} \n {}", data, task)
+        }
+
+        data = format!(" {} \n {}",data ,"\n");
+        
+
+        buf.write_all(data.as_bytes()).expect("Failed to write to the buf writer");
 
         Ok(())
     }
