@@ -1,9 +1,25 @@
 // * Importation of the modules 
 
+use rand::{thread_rng, Rng};
+use rand::distributions::Alphanumeric;
 use chrono::prelude::*;
 use std::fmt;
 use serde::{self, Deserialize, Serialize};
 use super::errors::CreationError;
+
+// * Hash generator
+
+pub fn generate_hash() -> String {
+    // Function that generate a 32 char length String to be used as a hash in the TodoElement generation to make the difference between the element
+    let rand_string: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect();
+
+    rand_string 
+}
+
 
 // * Priority Enum 
 
@@ -22,6 +38,7 @@ pub struct TodoElement {
     pub priority : Priority,
     pub status : bool,
     pub created : String,
+    pub hash : String, 
 }
 
 
@@ -35,12 +52,15 @@ impl TodoElement {
         if s.len() == 0 {
             return Err(CreationError::EmptyString);
         }
+        let hash = generate_hash();
+
 
         Ok(TodoElement {
             content :  s,
             priority : prio,
             status : false,
             created : created,
+            hash : hash ,
         })
     }
 }
