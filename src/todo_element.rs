@@ -1,13 +1,11 @@
+// * Importation of the modules 
+
 use chrono::prelude::*;
 use std::fmt;
-// use std::{fmt::{self, Display},
-//      fs:: {self, metadata, DirBuilder, File, OpenOptions},
-//      io::{self, BufReader, BufWriter, Write }, 
-// };
-
 use serde::{self, Deserialize, Serialize};
 use super::errors::CreationError;
 
+// * Priority Enum 
 
 #[derive(PartialEq, PartialOrd, Debug, Serialize, Deserialize, Ord, Eq)]
 pub enum Priority {
@@ -15,6 +13,8 @@ pub enum Priority {
     Medium, 
     Low, 
 }
+
+// * Todo Element
 
 #[derive(PartialEq, Debug, Deserialize, Serialize)]
 pub struct TodoElement {

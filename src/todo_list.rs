@@ -1,3 +1,5 @@
+// * Importation of the modules
+
 use super::todo_element::{TodoElement,Priority};
 use super::errors::*;
 use std::{fmt,
@@ -7,6 +9,8 @@ use std::{fmt,
 
 use serde_json;
 use serde::{self, Deserialize, Serialize};
+
+// * Structs and enums 
 
 #[derive(Debug, PartialEq, Serialize,Deserialize)]
 pub struct TodoList {

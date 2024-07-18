@@ -23,8 +23,5 @@ fn main() {
     // todo_list.sort_by_priority();
 
     todo_list.display_by_date().unwrap();  
-    // let todolist = TodoList::from_data(path).unwrap(); 
-
-    // println!("{}",todo_list);
 }
 

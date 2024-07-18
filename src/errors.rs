@@ -1,3 +1,5 @@
+// * Error types 
+
 use std::fmt::{self,Display};
 use serde_json;
 
