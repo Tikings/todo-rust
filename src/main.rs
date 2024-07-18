@@ -1,6 +1,5 @@
-// use todo::{TodoElement, TodoList, Priority};
-// use std::env::args;
-use todo::{TodoElement,TodoList,Priority};
+use todo::todo_list::TodoList;
+use todo::todo_element::{TodoElement,Priority};
 
 fn main() {
 
@@ -21,10 +20,11 @@ fn main() {
 
     // todo_list.write_file().expect("Didn't saved the file... ");
     // todo_list.sort_by_date();
-    todo_list.sort_by_priority();
+    // todo_list.sort_by_priority();
 
+    todo_list.display_by_date().unwrap();  
     // let todolist = TodoList::from_data(path).unwrap(); 
 
-    println!("{}",todo_list);
+    // println!("{}",todo_list);
 }
 
