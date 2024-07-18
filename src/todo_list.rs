@@ -17,9 +17,12 @@ pub struct TodoList {
     pub list : Vec<TodoElement>, 
     pub path : String, 
     pub path_backup : String,
+    pub hash_list : Vec<String>,
 }
 
 impl TodoList {
+
+    // * Functions for file management
 
     fn check_todo_dir(path : &str) -> Result<String, CreationError> {
         // Creating the folder that will contain the current data and the backup data.
@@ -74,263 +77,6 @@ impl TodoList {
             Ok(file) => Ok(file),
             Err(_) =>  Err(CreationError::FileCreation),
         }
-    }
-
-    // Create a new todo-list
-    pub fn new(dir_path : &str) -> Result<Self, CreationError> {
-        
-        // Empty vector that will contain all the elements of the todo listo
-        let list : Vec<TodoElement> = Vec::new();
-
-        let path_todo : String;
-        // Check if the directory to save the todo files exists and if it is not the case try to create one
-        let dir_save = Self::check_todo_dir(dir_path);
-        match dir_save {
-            Ok(s) => {
-                println!("Directory created");
-                path_todo = s.clone();
-            }
-            Err(e) => return Err(e),
-        }
-
-        // Create the save file if it doesn't exists
-        let save_file = Self::check_save_todo_file(&path_todo);
-        match save_file {
-            Ok(_) => println!("Save file for todo list created !"),
-            Err(e) => return Err(e),
-        }
-
-        // Create the backup file if it doesn't exists
-        let backup_file = Self::check_backup_todo_file(&path_todo);
-        match backup_file {
-            Ok(_) => println!("Backup file for todo list created !"),
-            Err(e) => return Err(e),
-        }
-
-        Ok(TodoList{
-            list : list,
-            path : format!("{}/save.todo",path_todo),
-            path_backup : format!("{}/backup.todo",path_todo),
-        })
-    }
-
-
-    pub fn add(mut self, content : String , priority : String) -> Result<(), TodoFileError> {
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
-
-        // Adding a new TodoElementTo the list from the arguments
-        // Arguments are going to look like : todo add "Task1" -p m -> Add the Task 1 of priority medium ( -p is optional here -> Default : medium)
-
-        let lower_priority = priority.to_lowercase();
-        let parsed_priority : Priority= match lower_priority.as_str() {
-            "high" | "h" => Priority::High ,
-            "low" | "l" => Priority::Low ,
-            _ => Priority::Medium,
-        };
-
-        let element_to_add = TodoElement::new(content, parsed_priority).unwrap();
-
-        self.list.push(element_to_add);
-        
-        Ok(())
-        
-    }
-
-    pub fn remove(&mut self,  index : usize) -> Result<(), TodoFileError> {
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
-        
-        self.list.remove(index);
-        
-
-        Ok(())
-    }
-
-
-    pub fn done(&mut self,  index : usize) -> Result<(), TodoFileError>  {
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
-
-        self.list[index].status = true;
-
-        Ok(())
-    }
-
-    pub fn display_by_date(&self) -> Result<(), TodoFileError>  {
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
-        
-        let stdout = io::stdout();
-        let mut buf = BufWriter::new(stdout);
-        
-        // Data to display in the terminal
-        let mut data : String = String::from(
-        "TO-DO _____\n"
-        );
-
-        // Done tasks
-        let mut done_tasks : Vec<&TodoElement> = Vec::new(); 
-        // Undone tasks 
-        let mut undone_tasks : Vec<&TodoElement> = Vec::new();
-        
-        // Sorting the different task in the 2 lists
-        for todo in self.list.iter() {
-            if todo.status {
-                done_tasks.push(todo); 
-            } else {
-                undone_tasks.push(todo);
-            }
-        }
-
-        // Sorting the undone tasks by date
-        undone_tasks.sort_by(|a ,b| a.created.cmp(&b.created));
-        
-        for task in undone_tasks.iter() {
-            data = format!("{} \n {}", data, task)
-        }
-        
-        data = format!(" {} \n {}",data ,"\n DONE _____ \n");
-
-        for task in done_tasks.iter() {
-            data = format!("{} \n {}", data, task)
-        }
-
-        data = format!(" {} \n {}",data ,"\n");
-        
-
-        buf.write_all(data.as_bytes()).expect("Failed to write to the buf writer");
-
-        Ok(())
-    }
-
-
-    pub fn display_by_priority(&self) -> Result<(), TodoFileError>  {
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
-
-        let stdout = io::stdout();
-        let mut buf = BufWriter::new(stdout);
-        
-        // Data to display in the terminal
-        let mut data : String = String::from(
-        "TO-DO _____\n"
-        );
-
-        // Done tasks
-        let mut done_tasks : Vec<&TodoElement> = Vec::new(); 
-        // Undone tasks 
-        let mut undone_tasks : Vec<&TodoElement> = Vec::new();
-        
-        // Sorting the different task in the 2 lists
-        for todo in self.list.iter() {
-            if todo.status {
-                done_tasks.push(todo); 
-            } else {
-                undone_tasks.push(todo);
-            }
-        }
-
-        // Sorting the undone tasks by date
-        undone_tasks.sort_by(|a ,b| a.created.cmp(&b.created));
-        
-        for task in undone_tasks.iter() {
-            data = format!("{} \n {}", data, task)
-        }
-        
-        data = format!(" {} \n {}",data ,"\n DONE _____ \n");
-
-        for task in done_tasks.iter() {
-            data = format!("{} \n {}", data, task)
-        }
-
-        data = format!(" {} \n {}",data ,"\n");
-        
-
-        buf.write_all(data.as_bytes()).expect("Failed to write to the buf writer");
-
-        Ok(())
-    }
-
-
-    pub fn reset(&self) -> Result<(), TodoFileError> {
-        // Reset the todo list by removing the data from the save.todo file.
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
-
-        //Opening file
-        let save_file : File; 
-
-        let result_save_file = OpenOptions::new()
-        .write(true)
-        .open(&self.path);
-    
-        match result_save_file {
-            Ok(f) => save_file = f,
-            Err(e) => return Err(TodoFileError::OpenFile(e)),
-        };
-
-        // Clearing the save file
-        match save_file.set_len(0) {
-            Ok(_) => (),
-            Err(_) => return Err(TodoFileError::ClearingError),
-        };
-
-        Ok(())
-    }
-
-    pub fn restore(&self) -> Result<(),TodoFileError> {
-        // Restore the previous todo list from the backup file by copying its content to the save file.
-
-        //Opening backup file
-        let save_file : File; 
-
-        let result_save_file = OpenOptions::new()
-        .write(true)
-        .open(&self.path);
-    
-        match result_save_file {
-            Ok(f) => save_file = f,
-            Err(e) => return Err(TodoFileError::OpenFile(e)),
-        };
-
-        // Clearing the back_up file
-        match save_file.set_len(0) {
-            Ok(_) => (),
-            Err(_) => return Err(TodoFileError::ClearingError),
-        };
-
-        // Copying file content to the other file
-        match fs::copy(&self.path_backup,&self.path) {
-            Ok(_) => (),
-            Err(_) => return Err(TodoFileError::CopyError),
-        }
-
-        Ok(())
     }
 
     pub fn write_file(&self) -> Result<(),TodoFileError>{
@@ -403,14 +149,328 @@ impl TodoList {
 
     }
 
-    pub fn sort_by_date(&mut self){
-        // Function that sort the list field by date.
-        self.list.sort_by(|a, b| a.created.cmp(&b.created))
+    // * Methods for functionalities
+
+    // Create a new todo-list
+    pub fn new(dir_path : &str) -> Result<Self, CreationError> {
+        
+        // Empty vector that will contain all the elements of the todo listo
+        let list : Vec<TodoElement> = Vec::new();
+        let hash_list : Vec<String> = Vec::new();
+
+        let path_todo : String;
+        // Check if the directory to save the todo files exists and if it is not the case try to create one
+        let dir_save = Self::check_todo_dir(dir_path);
+        match dir_save {
+            Ok(s) => {
+                println!("Directory created");
+                path_todo = s.clone();
+            }
+            Err(e) => return Err(e),
+        }
+
+        // Create the save file if it doesn't exists
+        let save_file = Self::check_save_todo_file(&path_todo);
+        match save_file {
+            Ok(_) => println!("Save file for todo list created !"),
+            Err(e) => return Err(e),
+        }
+
+        // Create the backup file if it doesn't exists
+        let backup_file = Self::check_backup_todo_file(&path_todo);
+        match backup_file {
+            Ok(_) => println!("Backup file for todo list created !"),
+            Err(e) => return Err(e),
+        }
+
+        Ok(TodoList{
+            list : list,
+            path : format!("{}/save.todo",path_todo),
+            path_backup : format!("{}/backup.todo",path_todo),
+            hash_list : hash_list,
+        })
     }
 
-    pub fn sort_by_priority(&mut self) {
-        self.list.sort_by(|a,b| a.priority.cmp(&b.priority))
+
+    pub fn add(mut self, content : String , priority : String) -> Result<(), TodoFileError> {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        // Adding a new TodoElementTo the list from the arguments
+        // Arguments are going to look like : todo add "Task1" -p m -> Add the Task 1 of priority medium ( -p is optional here -> Default : medium)
+
+        let lower_priority = priority.to_lowercase();
+        let parsed_priority : Priority= match lower_priority.as_str() {
+            "high" | "h" => Priority::High ,
+            "low" | "l" => Priority::Low ,
+            _ => Priority::Medium,
+        };
+
+        let element_to_add = TodoElement::new(content, parsed_priority).unwrap();
+
+        self.list.push(element_to_add);
+        
+        Ok(())
+        
     }
+
+    pub fn remove(&mut self,  index : usize) -> Result<(), TodoFileError> {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+        
+        self.list.remove(index);
+        
+
+        Ok(())
+    }
+
+
+    pub fn done(&mut self,  index : usize) -> Result<(), TodoFileError>  {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        self.list[index].status = true;
+
+        Ok(())
+    }
+
+
+
+    pub fn reset(&self) -> Result<(), TodoFileError> {
+        // Reset the todo list by removing the data from the save.todo file.
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        //Opening file
+        let save_file : File; 
+
+        let result_save_file = OpenOptions::new()
+        .write(true)
+        .open(&self.path);
+    
+        match result_save_file {
+            Ok(f) => save_file = f,
+            Err(e) => return Err(TodoFileError::OpenFile(e)),
+        };
+
+        // Clearing the save file
+        match save_file.set_len(0) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::ClearingError),
+        };
+
+        Ok(())
+    }
+
+    pub fn restore(&self) -> Result<(),TodoFileError> {
+        // Restore the previous todo list from the backup file by copying its content to the save file.
+
+        //Opening backup file
+        let save_file : File; 
+
+        let result_save_file = OpenOptions::new()
+        .write(true)
+        .open(&self.path);
+    
+        match result_save_file {
+            Ok(f) => save_file = f,
+            Err(e) => return Err(TodoFileError::OpenFile(e)),
+        };
+
+        // Clearing the back_up file
+        match save_file.set_len(0) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::ClearingError),
+        };
+
+        // Copying file content to the other file
+        match fs::copy(&self.path_backup,&self.path) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::CopyError),
+        }
+
+        Ok(())
+    }
+
+    // * Functions to display the todo list
+
+    pub fn display_by_date(&mut self) -> Result<(), TodoFileError>  {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        // Creating the counter for to display the data
+        let mut counter = 0;
+
+        // Creating the new hash list
+        let mut hash_list : Vec<String> = Vec::new();
+        
+        // Buffer to print in the terminal the data
+        let stdout = io::stdout();
+        let mut buf = BufWriter::new(stdout);
+        
+        // Data to display in the terminal
+        let mut data : String = String::from(
+        "TO-DO _____\n"
+        );
+
+        // Done tasks
+        let mut done_tasks : Vec<&TodoElement> = Vec::new(); 
+        // Undone tasks 
+        let mut undone_tasks : Vec<&TodoElement> = Vec::new();
+        
+        // Sorting the different task in the 2 lists
+        for todo in self.list.iter() {
+            if todo.status {
+                done_tasks.push(todo); 
+            } else {
+                undone_tasks.push(todo);
+            }
+        }
+
+        // Sorting the undone tasks by date
+        undone_tasks.sort_by(|a ,b| a.created.cmp(&b.created));
+        
+        // Formatting the data to display 
+        for task in undone_tasks.iter() {
+            data = format!("{} \n {}. {}", data, counter, task);
+            hash_list.push(task.hash.clone());
+            counter += 1 ;
+        }
+        
+        data = format!(" {} \n {}",data ,"\n DONE _____ \n");
+
+        for task in done_tasks.iter() {
+            data = format!("{} \n {}. {}", data, counter, task);
+            hash_list.push(task.hash.clone());
+            counter += 1 ;
+        }
+
+        data = format!(" {} \n {}",data ,"\n");
+        // Displaying the data
+        buf.write_all(data.as_bytes()).expect("Failed to write to the buf writer");
+
+        self.hash_list = hash_list;
+
+        Ok(())
+    }
+
+
+    pub fn display_by_priority(&mut self) -> Result<(), TodoFileError>  {
+
+        // Backup data before reset
+        match self.backup_data() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        // Creating the counter for to display the data
+        let mut counter = 0;
+
+        // Creating the new hash list
+        let mut hash_list : Vec<String> = Vec::new();
+        
+        // Buffer to print in the terminal the data
+        let stdout = io::stdout();
+        let mut buf = BufWriter::new(stdout);
+        
+        // Data to display in the terminal
+        let mut data : String = String::from(
+        "TO-DO _____ \n \n ____ High ____ \n"
+        );
+
+        // splitting the done tasks and undone task in 2 Lists 
+        let mut done_tasks : Vec<&TodoElement> = Vec::new(); 
+        let mut undone_tasks : Vec<&TodoElement> = Vec::new();
+        
+        // Sorting the different task in the 2 lists
+        for todo in self.list.iter() {
+            if todo.status {
+                done_tasks.push(todo); 
+            } else {
+                undone_tasks.push(todo);
+            }
+        }
+
+        // Sorting the undone tasks by their priority
+        let mut high_priority : Vec<&TodoElement> = Vec::new();
+        let mut med_priority : Vec<&TodoElement> = Vec::new();
+        let mut low_priority : Vec<&TodoElement> = Vec::new();
+
+    for task in undone_tasks.iter(){
+            if task.priority == Priority::High {
+                high_priority.push(task);
+            }
+            else if task.priority == Priority::Medium {
+                med_priority.push(task)
+            }
+            else {
+                low_priority.push(task)
+            }
+        }
+
+        // Sorting the undone tasks by date
+        high_priority.sort_by(|a ,b| a.created.cmp(&b.created));
+        med_priority.sort_by(|a ,b| a.created.cmp(&b.created));
+        low_priority.sort_by(|a ,b| a.created.cmp(&b.created));
+        
+        // Formatting the data to display 
+        for task in high_priority.iter() {
+            data = format!("{} \n {}. {}", data, counter, task);
+            hash_list.push(task.hash.clone());
+            counter += 1 ;
+        }
+        
+        data = format!("{} \n \n ____ Medium ____ \n", data);
+
+        for task in med_priority.iter() {
+            data = format!("{} \n {}. {}", data, counter, task);
+            hash_list.push(task.hash.clone());
+            counter += 1 ;
+        }
+
+        data = format!("{} \n \n ____ Low ____ \n", data);
+
+        for task in low_priority.iter() {
+            data = format!("{} \n {}. {}", data, counter, task);
+            hash_list.push(task.hash.clone());
+            counter += 1 ;
+        }
+        
+        data = format!(" {} \n {}",data ,"\n DONE _____ \n");
+
+        for task in done_tasks.iter() {
+            data = format!("{} \n {}. {}", data, counter, task);
+            hash_list.push(task.hash.clone());
+            counter += 1 ;
+        }
+
+        data = format!(" {} \n {}",data ,"\n");
+        // Displaying the data
+        buf.write_all(data.as_bytes()).expect("Failed to write to the buf writer");
+
+        self.hash_list = hash_list;
+
+        Ok(())    }
 
 }
 
