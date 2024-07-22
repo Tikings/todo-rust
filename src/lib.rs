@@ -21,3 +21,4 @@
 pub mod todo_element;
 pub mod todo_list;
 pub mod errors;
+pub mod cli;

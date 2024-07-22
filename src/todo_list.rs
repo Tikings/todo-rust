@@ -226,8 +226,21 @@ impl TodoList {
             Err(e) => return Err(e),
         }
         
-        self.list.remove(index);
-        
+        // Retriving the hash corresponding to the task to remove
+        let hash = self.hash_list[index].clone();
+        let mut index_to_remove : usize = self.hash_list.len() + 1 ; 
+
+        for (ind, task) in self.list.iter().enumerate() {
+          if hash == task.hash {
+            index_to_remove = ind;
+          } 
+        }
+
+        if index_to_remove == self.hash_list.len() {
+            return Err(TodoFileError::Modify("Index does not exist".to_string()));
+        }
+
+        self.list.remove(index_to_remove);
 
         Ok(())
     }
@@ -240,8 +253,22 @@ impl TodoList {
             Ok(_) => (),
             Err(e) => return Err(e),
         }
+        
+        // Retriving the hash corresponding to the task to remove
+        let hash = self.hash_list[index].clone();
+        let mut index_to_change : usize = self.hash_list.len() + 1 ; 
 
-        self.list[index].status = true;
+        for (ind, task) in self.list.iter().enumerate() {
+          if hash == task.hash {
+            index_to_change = ind;
+          } 
+        }
+
+        if index_to_change == self.hash_list.len() {
+            return Err(TodoFileError::Modify("Index does not exist".to_string()));
+        }
+
+        self.list[index_to_change].status = true;
 
         Ok(())
     }
