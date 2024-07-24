@@ -207,7 +207,8 @@ impl TodoList {
         let parsed_priority : Priority= match lower_priority.as_str() {
             "high" | "h" => Priority::High ,
             "low" | "l" => Priority::Low ,
-            _ => Priority::Medium,
+            "medium" | "m" => Priority::Medium ,
+            _ => return Err(TodoFileError::NotAPriority(lower_priority)),
         };
 
         let element_to_add = TodoElement::new(content, parsed_priority).unwrap();
