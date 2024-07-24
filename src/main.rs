@@ -1,35 +1,107 @@
-use todo::todo_list::TodoList;
-use todo::todo_element::{TodoElement,Priority};
+
+// use todo::todo_list::TodoList;
+// use todo::todo_element::{TodoElement,Priority};
+use todo::{cli::cli, errors::TodoFileError, todo_list::TodoList};
+// use std::path::PathBuf;
 
 fn main() {
 
-    let path = "tests/test_todo/.todo/save.todo".to_string();
-    let path_backup = "tests/test_todo/.todo/backup.todo".to_string();
+    // * Retrieve or create the todo list
 
-    let list_element = vec![
-        TodoElement {content  : "Task 1".to_string(), priority :  Priority::Medium, status : false, created : "26-05-2024".to_string(), hash : "CdfxrIRnWyAZlBczamzysFLOPcod07al".to_string()},
-        TodoElement {content  : "Task 2".to_string(), priority :  Priority::Low, status : true, created : "23-06-2024".to_string(), hash : "ASD0v9lXsMo0pacqL7BkfRCMWpI6a1pd".to_string()},
-        TodoElement {content  : "Task 4".to_string(), priority :  Priority::Low, status : false, created : "22-01-2022".to_string(), hash : "yPrTtABuiQTDxRvTBHXHYI0MypGJsGen".to_string()},
-        TodoElement {content  : "Task 5".to_string(), priority :  Priority::Medium, status : false, created : "31-07-2025".to_string(), hash : "tWaO17BhhRfm7MYy0iS67AAtNwLSoBql".to_string()},
-        TodoElement {content  : "Task 6".to_string(), priority :  Priority::High, status : true, created : "04-01-2002".to_string(), hash : "cn3B3VzUysOfZdVS9q6Jt3s1YKIeQ602".to_string()},
-        TodoElement {content  : "Task 7".to_string(), priority :  Priority::High, status : false, created : "05-04-1999".to_string(), hash : "mQJTBMcvQoPcBVAJ4mnyj4Np07LrDBsk".to_string()},
-    ];
+    // Retrieve the current dir   
+    let current_dir  = std::env::current_dir().unwrap();
+    // println!("Current directory = {:?}", current_dir);
+    // path for the save file
+    let mut save_path = current_dir.clone();
+    save_path.push(".todo");
+    save_path.push("save");
+    save_path.set_extension("todo");
 
-    let mut todo_list = TodoList{
-        list : list_element,
-        path : path.clone(),
-        path_backup : path_backup.clone(),
-        hash_list : vec![ "CdfxrIRnWyAZlBczamzysFLOPcod07al".to_string(), "ASD0v9lXsMo0pacqL7BkfRCMWpI6a1pd".to_string(), "yPrTtABuiQTDxRvTBHXHYI0MypGJsGen".to_string()],
+    // println!("Current directory = {:?}", save_path);
+
+
+    // Trying to retrieve the data from the save file 
+    let result_todo : Result<TodoList,TodoFileError> = TodoList::from_data(&save_path);
+
+    let mut todo_list = match result_todo {
+        Ok(todo) => todo, //If the save file already exists 
+        Err(_) => {
+            let todo = TodoList::new(&current_dir).unwrap();
+            todo.write_file().unwrap();
+            todo
+        } // If it doesn't exist, we create the todo list from scratch
     };
     
-    todo_list.write_file().unwrap();
+   
+    // * Operation of the to-do list 
 
-    println!("{:?}", todo_list.hash_list);
+    let command = cli();
+    // Getiting the matches from the parser
+    let matches  = command.get_matches();
 
-    todo_list.display_by_priority().unwrap();  
+    // Getting the subcommand used and its matches
+    let submatches = matches.subcommand();
+    // println!("{:?}", submatches);
 
-    todo_list.write_file().unwrap();
+    match submatches {
+        Some(("add", matches)) => {
 
-    println!("{:?}", todo_list.hash_list);
+            let content : String = matches.get_one::<String>("task").expect("Please prompt a task").clone();
+            let priority : String = matches.get_one::<String>("priority").expect("Please prompt a task").clone();
+
+            match &todo_list.add(content, priority) {
+                Ok(_) => println!("Added !"),
+                Err(e) => println!("{}", e)
+            };
+        } 
+        Some(("done", matches)) => {
+            let index : usize = matches.get_one::<usize>("id").expect("An ID is required").clone();
+            
+            match &todo_list.done(index) {
+                Ok(_) => println!("Set as done !"),
+                Err(e) => println!("{}", e)
+            }
+        }
+        Some(("remove", matches)) => {
+            let index : usize = matches.get_one::<usize>("id").expect("An ID is required").clone();
+            
+            match &todo_list.remove(index) {
+                Ok(_) => println!("Remove task #{}",index),
+                Err(e) => println!("{}", e)
+            }
+        }
+        Some(("reset", _matches)) => {
+            match &todo_list.reset() {
+                Ok(_) => println!("To-do list got reset"),
+                Err(e) => println!("{}", e),
+            }
+        }
+        Some(("restore", _matches)) => {
+            match &todo_list.restore() {
+                Ok(_) => println!("Restored last version of the to-do list"),
+                Err(e) => println!("{}", e),
+            }
+        }
+        Some(("sort", _matches)) => {
+            match &todo_list.display_by_priority() {
+                Ok(_) => (),
+                Err(e) => println!("{}", e),
+            }
+        }
+        _ => {
+            match &todo_list.display_by_date() {
+                Ok(_) => (),
+                Err(e) => println!("Unable to display : {}",e),
+            }
+        }
+    }
+
+    // Saving the changes
+    match &todo_list.write_file() {
+        Ok(_) => (),
+        Err(e) => println!("Error while saving the file : {}", e)
+    }
+
+
 }
 
