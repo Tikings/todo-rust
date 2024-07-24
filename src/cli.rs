@@ -45,10 +45,10 @@ pub fn cli() -> Command {
             )
         )
     .subcommand(
-        Command::new("delete")
+        Command::new("remove")
             .about("To remove a task from the todo list")
             .arg_required_else_help(true)
-            .alias("remove")
+            .alias("delete")
             .arg(
                 Arg::new("id")
                 .required(false)
