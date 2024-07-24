@@ -90,6 +90,12 @@ impl TodoList {
             Err(e) => return Err(TodoFileError::OpenFile(e)),
         }
 
+        // Clearing the back_up file
+        match save_file.set_len(0) {
+            Ok(_) => (),
+            Err(_) => return Err(TodoFileError::ClearingError),
+        };
+
         let buffer = BufWriter::new(&save_file);
 
         match serde_json::to_writer(buffer, &self) {
