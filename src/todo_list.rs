@@ -2,6 +2,7 @@
 
 use super::todo_element::{TodoElement,Priority};
 use super::errors::*;
+use std::path::PathBuf;
 use std::{fmt,
      fs:: {self, metadata, DirBuilder, File, OpenOptions},
      io::{self, BufReader, BufWriter, Write }, 
@@ -24,10 +25,13 @@ impl TodoList {
 
     // * Functions for file management
 
-    fn check_todo_dir(path : &str) -> Result<String, CreationError> {
+    fn check_todo_dir(path : &PathBuf) -> Result<PathBuf, CreationError> {
         // Creating the folder that will contain the current data and the backup data.
-        let mut path_dir = ".todo".to_string();
-        path_dir = format!("{}/{}",path, path_dir);
+        // let mut path_dir = ".todo".to_string();
+        // path_dir = format!("{}/{}",path, path_dir);
+        let mut path_dir = path.clone();
+        path_dir.push(".todo");
+
         let dir_result = metadata(&path_dir);
 
         let dir_exist = match dir_result {
@@ -42,41 +46,53 @@ impl TodoList {
                 Err(_) => return Err(CreationError::FolderErr),
             }
         }
-        println!("Path created : {}",path_dir);
+        // println!("Path created : {}",path);
         Ok(path_dir)
     }
 
     // Check if the file where we store the information of the todo exists and if not create one.
-    fn check_save_todo_file(dir_path : &str) -> Result<File,CreationError>{
+    fn check_save_todo_file(path : &PathBuf) -> Result<File,CreationError>{
 
-        let path = format!("{}/save.todo", dir_path);
+        // let path = format!("{}/save.todo", dir_path);
+        let mut path_dir = path.clone();
+        // path_dir.push(".todo");
+        path_dir.push("save");
+        path_dir.set_extension("todo");
+
 
         let res  = OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
-        .open(path);
+        .open(path_dir);
 
         match res {
             Ok(file) => Ok(file),
-            Err(_) =>  Err(CreationError::FileCreation),
+            Err(e) =>  {
+                println!("{}", e);
+                Err(CreationError::FileCreation)
+            }
         }
     }
 
-    fn check_backup_todo_file(dir_path : &str) -> Result<File,CreationError>{
+    fn check_backup_todo_file(path : &PathBuf) -> Result<File,CreationError>{
 
-        let path = format!("{}/backup.todo", dir_path);
+        let mut path_dir = path.clone();
+        // path_dir.push(".todo");
+        path_dir.push("backup");
+        path_dir.set_extension("todo");
 
-        let res = OpenOptions::new()
+        let res  = OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
-        .open(path);
+        .open(path_dir);
 
         match res {
             Ok(file) => Ok(file),
             Err(_) =>  Err(CreationError::FileCreation),
         }
+
     }
 
     pub fn write_file(&self) -> Result<(),TodoFileError>{
@@ -137,7 +153,7 @@ impl TodoList {
         Ok(())
     }
 
-    pub fn from_data(path : String) -> Result<Self, TodoFileError> {
+    pub fn from_data(path : &PathBuf) -> Result<Self, TodoFileError> {
         // Function that retrieve the todo list from the json formated data of the save.todo file
 
         let save_file : File;
@@ -158,19 +174,19 @@ impl TodoList {
     // * Methods for functionalities
 
     // Create a new todo-list
-    pub fn new(dir_path : &str) -> Result<Self, CreationError> {
+    pub fn new(dir_path : &PathBuf) -> Result<Self, CreationError> {
         
         // Empty vector that will contain all the elements of the todo listo
         let list : Vec<TodoElement> = Vec::new();
         let hash_list : Vec<String> = Vec::new();
 
-        let path_todo : String;
+        let path_todo ;
         // Check if the directory to save the todo files exists and if it is not the case try to create one
-        let dir_save = Self::check_todo_dir(dir_path);
+        let dir_save = Self::check_todo_dir(&dir_path);
         match dir_save {
             Ok(s) => {
                 println!("Directory created");
-                path_todo = s.clone();
+                path_todo = s;
             }
             Err(e) => return Err(e),
         }
@@ -188,17 +204,19 @@ impl TodoList {
             Ok(_) => println!("Backup file for todo list created !"),
             Err(e) => return Err(e),
         }
+        
+        let path_as_str = path_todo.into_os_string().into_string().unwrap();
 
         Ok(TodoList{
             list : list,
-            path : format!("{}/save.todo",path_todo),
-            path_backup : format!("{}/backup.todo",path_todo),
+            path : format!("{}/save.todo",path_as_str),
+            path_backup : format!("{}/backup.todo",path_as_str),
             hash_list : hash_list,
         })
     }
 
 
-    pub fn add(mut self, content : String , priority : String) -> Result<(), TodoFileError> {
+    pub fn add(&mut self, content : String , priority : String) -> Result<(), TodoFileError> {
 
         // Backup data before reset
         match self.backup_data() {
