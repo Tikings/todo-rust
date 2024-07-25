@@ -1,5 +1,6 @@
 // * Importation of the modules 
 
+use colored::{ColoredString, Colorize};
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use chrono::prelude::*;
@@ -77,14 +78,23 @@ impl TodoElement {
 
 impl fmt::Display for TodoElement {
     fn fmt(&self, f : &mut fmt::Formatter<'_>) -> fmt::Result {
-        let checkbox : &str; 
 
+        let checkbox : ColoredString;
+        let formatted_content : ColoredString;
+        
+        //Done tasks
         if self.status {
-            checkbox = "[*]";
-        } else {
-            checkbox = "[ ]";
+            checkbox = "[*]".bold();
+            formatted_content = self.content.strikethrough();
+
+        } else { //Undone
+            checkbox = "[ ]".bold();
+            formatted_content = self.content.normal();
         }
 
-        write!(f, "{} {} | {}",checkbox, self.content,self.created)
+        let output = format!("{} {} | {}",checkbox, formatted_content,self.created.italic());
+
+
+        write!(f, "{}", output )
     }
 }

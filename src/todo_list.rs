@@ -7,6 +7,7 @@ use std::{
      fs:: {self, metadata, DirBuilder, File, OpenOptions},
      io::{self, BufReader, BufWriter, Write }, 
 };
+use colored::Colorize;
 
 use serde_json;
 use serde::{self, Deserialize, Serialize};
@@ -384,10 +385,9 @@ impl TodoList {
         let stdout = io::stdout();
         let mut buf = BufWriter::new(stdout);
         
-        // Data to display in the terminal
-        let mut data : String = String::from(
-        "TO-DO _____\n"
-        );
+        // To store the formatted elements
+        let mut data_undone = String::new();
+        let mut data_done = String::new();
 
         // Done tasks
         let mut done_tasks : Vec<&TodoElement> = Vec::new(); 
@@ -408,21 +408,36 @@ impl TodoList {
         
         // Formatting the data to display 
         for task in undone_tasks.iter() {
-            data = format!("{} \n {}. {}", data, counter, task);
+            data_undone = format!("{} \n {}. {}", data_undone, counter, task);
             hash_list.push(task.hash.clone());
             counter += 1 ;
         }
-        
-        data = format!(" {} \n {}",data ,"\n DONE _____ \n");
 
+        // Creating the string for the 
         for task in done_tasks.iter() {
-            data = format!("{} \n {}. {}", data, counter, task);
+            data_done = format!("{} \n {}. {}", data_done, counter, task);
             hash_list.push(task.hash.clone());
             counter += 1 ;
         }
 
-        data = format!(" {} \n {}",data ,"\n");
         // Displaying the data
+        let data = format!(
+r#"
+{}
+
+{}
+
+{}
+
+{}
+
+"#,
+ "TO-DO".truecolor(199, 86, 30).bold(),
+data_undone,
+ "DONE".truecolor(35, 223, 35).bold(),
+data_done
+);
+
         buf.write_all(data.as_bytes()).expect("Failed to write to the buf writer");
 
         self.hash_list = hash_list;
@@ -444,9 +459,10 @@ impl TodoList {
         let mut buf = BufWriter::new(stdout);
         
         // Data to display in the terminal
-        let mut data : String = String::from(
-        "TO-DO _____ \n \n ____ High ____ \n"
-        );
+        let mut data_high : String = String::new();
+        let mut data_med : String = String::new();
+        let mut data_low : String = String::new();
+        let mut data_done : String = String::new();
 
         // splitting the done tasks and undone task in 2 Lists 
         let mut done_tasks : Vec<&TodoElement> = Vec::new(); 
@@ -485,36 +501,60 @@ impl TodoList {
         
         // Formatting the data to display 
         for task in high_priority.iter() {
-            data = format!("{} \n {}. {}", data, counter, task);
+            data_high = format!("{} \n {}. {}", data_high, counter, task);
             hash_list.push(task.hash.clone());
             counter += 1 ;
         }
-        
-        data = format!("{} \n \n ____ Medium ____ \n", data);
 
         for task in med_priority.iter() {
-            data = format!("{} \n {}. {}", data, counter, task);
+            data_med = format!("{} \n {}. {}", data_med, counter, task);
             hash_list.push(task.hash.clone());
             counter += 1 ;
         }
 
-        data = format!("{} \n \n ____ Low ____ \n", data);
-
         for task in low_priority.iter() {
-            data = format!("{} \n {}. {}", data, counter, task);
+            data_low = format!("{} \n {}. {}", data_low, counter, task);
             hash_list.push(task.hash.clone());
             counter += 1 ;
         }
         
-        data = format!(" {} \n {}",data ,"\n DONE _____ \n");
-
         for task in done_tasks.iter() {
-            data = format!("{} \n {}. {}", data, counter, task);
+            data_done = format!("{} \n {}. {}", data_done, counter, task);
             hash_list.push(task.hash.clone());
             counter += 1 ;
         }
 
-        data = format!(" {} \n {}",data ,"\n");
+        let data = format!(
+r#"
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+"#,
+        "______ TO-DO ______".truecolor(199, 86, 30).bold(),
+        "------ High priority ------ ".bright_red().bold(),
+        data_high,
+        "------ Medium priority ------".bright_yellow().bold(),
+        data_med,
+        "------ Low priority ------".bright_cyan().bold(),
+        data_low,
+        "DONE".truecolor(35, 223, 35).bold(),
+        data_done
+        );
         // Displaying the data
         buf.write_all(data.as_bytes()).expect("Failed to write to the buf writer");
 
