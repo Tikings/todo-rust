@@ -1,8 +1,6 @@
 
-// use todo::todo_list::TodoList;
-// use todo::todo_element::{TodoElement,Priority};
 use todo::{cli::cli, errors::TodoFileError, todo_list::TodoList};
-// use std::path::PathBuf;
+
 
 fn main() {
 
@@ -53,6 +51,12 @@ fn main() {
                 Ok(_) => println!("Added !"),
                 Err(e) => println!("{}", e)
             };
+
+            match &todo_list.display_by_date() {
+                Ok(_) => (),
+                Err(e) => println!("Unable to display : {}",e),
+            }
+
         } 
         Some(("done", matches)) => {
             let index : usize = matches.get_one::<usize>("id").expect("An ID is required").clone();
@@ -61,6 +65,12 @@ fn main() {
                 Ok(_) => println!("Set as done !"),
                 Err(e) => println!("{}", e)
             }
+
+            match &todo_list.display_by_date() {
+                Ok(_) => (),
+                Err(e) => println!("Unable to display : {}",e),
+            }
+
         }
         Some(("remove", matches)) => {
             let index : usize = matches.get_one::<usize>("id").expect("An ID is required").clone();
@@ -69,18 +79,36 @@ fn main() {
                 Ok(_) => println!("Remove task #{}",index),
                 Err(e) => println!("{}", e)
             }
+
+            match &todo_list.display_by_date() {
+                Ok(_) => (),
+                Err(e) => println!("Unable to display : {}",e),
+            }
+
         }
         Some(("reset", _matches)) => {
             match &todo_list.reset() {
                 Ok(_) => println!("To-do list got reset"),
                 Err(e) => println!("{}", e),
             }
+
+            match &todo_list.display_by_date() {
+                Ok(_) => (),
+                Err(e) => println!("Unable to display : {}",e),
+            }
+
         }
         Some(("restore", _matches)) => {
             match &todo_list.restore() {
                 Ok(_) => println!("Restored last version of the to-do list"),
                 Err(e) => println!("{}", e),
             }
+
+            match &todo_list.display_by_date() {
+                Ok(_) => (),
+                Err(e) => println!("Unable to display : {}",e),
+            }
+
         }
         Some(("sort", _matches)) => {
             match &todo_list.display_by_priority() {

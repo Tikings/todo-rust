@@ -23,6 +23,7 @@ pub fn generate_hash() -> String {
 
 // * Priority Enum 
 
+// The different priorities that can be set for a task / element 
 #[derive(PartialEq, PartialOrd, Debug, Serialize, Deserialize, Ord, Eq)]
 pub enum Priority {
     High, 
@@ -34,10 +35,19 @@ pub enum Priority {
 
 #[derive(PartialEq, Debug, Deserialize, Serialize)]
 pub struct TodoElement {
+    // Content of the task 
     pub content : String,
+
+    // Priority of the task -> medium by default
     pub priority : Priority,
+
+    // Done -> True, Undone -> False 
     pub status : bool,
+
+    // Date of creation of the element
     pub created : String,
+
+    // Unique ID of the task in the todo list.
     pub hash : String, 
 }
 

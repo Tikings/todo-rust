@@ -3,7 +3,7 @@
 use super::todo_element::{TodoElement,Priority};
 use super::errors::*;
 use std::path::PathBuf;
-use std::{fmt,
+use std::{
      fs:: {self, metadata, DirBuilder, File, OpenOptions},
      io::{self, BufReader, BufWriter, Write }, 
 };
@@ -25,13 +25,14 @@ impl TodoList {
 
     // * Functions for file management
 
+    /// Creating the folder that will contain the current data and the backup data.
     fn check_todo_dir(path : &PathBuf) -> Result<PathBuf, CreationError> {
-        // Creating the folder that will contain the current data and the backup data.
-        // let mut path_dir = ".todo".to_string();
-        // path_dir = format!("{}/{}",path, path_dir);
+
         let mut path_dir = path.clone();
+        // The folder olding the saving and backup files will be named as following 
         path_dir.push(".todo");
 
+        // Checking if this dir already exists 
         let dir_result = metadata(&path_dir);
 
         let dir_exist = match dir_result {
@@ -39,6 +40,7 @@ impl TodoList {
             Err(_) => false,
         };
 
+        // If its not the case, create the directory
         if !dir_exist {
             let build_dir = DirBuilder::new().create(&path_dir);
             match build_dir {
@@ -46,16 +48,14 @@ impl TodoList {
                 Err(_) => return Err(CreationError::FolderErr),
             }
         }
-        // println!("Path created : {}",path);
         Ok(path_dir)
     }
 
     // Check if the file where we store the information of the todo exists and if not create one.
     fn check_save_todo_file(path : &PathBuf) -> Result<File,CreationError>{
 
-        // let path = format!("{}/save.todo", dir_path);
+        // Path of the save file
         let mut path_dir = path.clone();
-        // path_dir.push(".todo");
         path_dir.push("save");
         path_dir.set_extension("todo");
 
@@ -75,10 +75,11 @@ impl TodoList {
         }
     }
 
+    // Check if the backup file exists and creates it if it isn't the case
     fn check_backup_todo_file(path : &PathBuf) -> Result<File,CreationError>{
 
+        // Path of the backup file
         let mut path_dir = path.clone();
-        // path_dir.push(".todo");
         path_dir.push("backup");
         path_dir.set_extension("todo");
 
@@ -96,8 +97,9 @@ impl TodoList {
     }
 
     pub fn write_file(&self) -> Result<(),TodoFileError>{
-        // Function that write the content of the todo list to the file ih the self.path location
+        // Function that save the content of the todo list struct to the file in the self.path location
 
+        // Opening the file
         let save_file : File;
         match OpenOptions::new()
         .write(true)
@@ -106,7 +108,7 @@ impl TodoList {
             Err(e) => return Err(TodoFileError::OpenFile(e)),
         }
 
-        // Clearing the back_up file
+        // Clearing the save file
         match save_file.set_len(0) {
             Ok(_) => (),
             Err(_) => return Err(TodoFileError::ClearingError),
@@ -114,6 +116,7 @@ impl TodoList {
 
         let buffer = BufWriter::new(&save_file);
 
+        // Saving the data formatted as a json string 
         match serde_json::to_writer(buffer, &self) {
             Ok(_) => (),
             Err(e) => return Err(TodoFileError::WriteError(e)),
@@ -225,7 +228,6 @@ impl TodoList {
         }
 
         // Adding a new TodoElementTo the list from the arguments
-        // Arguments are going to look like : todo add "Task1" -p m -> Add the Task 1 of priority medium ( -p is optional here -> Default : medium)
 
         let lower_priority = priority.to_lowercase();
         let parsed_priority : Priority= match lower_priority.as_str() {
@@ -279,7 +281,7 @@ impl TodoList {
             Err(e) => return Err(e),
         }
         
-        // Retriving the hash corresponding to the task to remove
+        // Retrieving the hash corresponding to the task to remove
         let hash = self.hash_list[index].clone();
         let mut index_to_change : usize = self.hash_list.len() + 1 ; 
 
@@ -293,6 +295,7 @@ impl TodoList {
             return Err(TodoFileError::Modify("Index does not exist".to_string()));
         }
 
+        // Setting the element status as done
         self.list[index_to_change].status = true;
 
         Ok(())
@@ -524,18 +527,4 @@ impl TodoList {
 
         Ok(())    }
 
-}
-
-impl fmt::Display for TodoList {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-
-        let mut output = String::new();
-        for element in self.list.iter() {
-            let to_push = format!("{} \n", element);
-            output.push_str(&to_push);
-        }
-
-        let write : String = format!("{}", output);
-        write!(f,"{}",write)
-    }
 }
