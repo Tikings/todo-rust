@@ -8,15 +8,12 @@ fn main() {
 
     // Retrieve the current dir   
     let current_dir  = std::env::current_dir().unwrap();
-    // println!("Current directory = {:?}", current_dir);
+
     // path for the save file
     let mut save_path = current_dir.clone();
     save_path.push(".todo");
     save_path.push("save");
     save_path.set_extension("todo");
-
-    // println!("Current directory = {:?}", save_path);
-
 
     // Trying to retrieve the data from the save file 
     let result_todo : Result<TodoList,TodoFileError> = TodoList::from_data(&save_path);
@@ -27,19 +24,18 @@ fn main() {
             let todo = TodoList::new(&current_dir).unwrap();
             todo.write_file().unwrap();
             todo
-        } // If it doesn't exist, we create the todo list from scratch
+        } // If it doesn't exist, we create the todo list 
     };
     
    
     // * Operation of the to-do list 
 
     let command = cli();
-    // Getiting the matches from the parser
+    // Getting the matches from the parser
     let matches  = command.get_matches();
 
     // Getting the subcommand used and its matches
     let submatches = matches.subcommand();
-    // println!("{:?}", submatches);
 
     match submatches {
         Some(("add", matches)) => {
@@ -57,6 +53,13 @@ fn main() {
                 Err(e) => println!("Unable to display : {}",e),
             }
 
+            // Saving the changes
+            match &todo_list.write_file() {
+                Ok(_) => (),
+                Err(e) => println!("Error while saving the file : {}", e)
+            }
+
+
         } 
         Some(("done", matches)) => {
             let index : usize = matches.get_one::<usize>("id").expect("An ID is required").clone();
@@ -71,6 +74,13 @@ fn main() {
                 Err(e) => println!("Unable to display : {}",e),
             }
 
+            // Saving the changes
+            match &todo_list.write_file() {
+                Ok(_) => (),
+                Err(e) => println!("Error while saving the file : {}", e)
+            }
+
+
         }
         Some(("remove", matches)) => {
             let index : usize = matches.get_one::<usize>("id").expect("An ID is required").clone();
@@ -84,6 +94,13 @@ fn main() {
                 Ok(_) => (),
                 Err(e) => println!("Unable to display : {}",e),
             }
+
+            // Saving the changes
+            match &todo_list.write_file() {
+                Ok(_) => (),
+                Err(e) => println!("Error while saving the file : {}", e)
+            }
+
 
         }
         Some(("reset", _matches)) => {
@@ -104,11 +121,6 @@ fn main() {
                 Err(e) => println!("{}", e),
             }
 
-            match &todo_list.display_by_date() {
-                Ok(_) => (),
-                Err(e) => println!("Unable to display : {}",e),
-            }
-
         }
         Some(("sort", _matches)) => {
             match &todo_list.display_by_priority() {
@@ -121,15 +133,10 @@ fn main() {
                 Ok(_) => (),
                 Err(e) => println!("Unable to display : {}",e),
             }
+
         }
-    }
 
-    // Saving the changes
-    match &todo_list.write_file() {
-        Ok(_) => (),
-        Err(e) => println!("Error while saving the file : {}", e)
     }
-
 
 }
 

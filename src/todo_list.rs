@@ -303,7 +303,7 @@ impl TodoList {
 
 
 
-    pub fn reset(&self) -> Result<(), TodoFileError> {
+    pub fn reset(&mut self) -> Result<(), TodoFileError> {
         // Reset the todo list by removing the data from the save.todo file.
 
         // Backup data before reset
@@ -330,6 +330,13 @@ impl TodoList {
             Err(_) => return Err(TodoFileError::ClearingError),
         };
 
+        self.list = Vec::new();
+
+        match self.write_file() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
+
         Ok(())
     }
 
@@ -348,7 +355,7 @@ impl TodoList {
             Err(e) => return Err(TodoFileError::OpenFile(e)),
         };
 
-        // Clearing the back_up file
+        // Clearing the save file
         match save_file.set_len(0) {
             Ok(_) => (),
             Err(_) => return Err(TodoFileError::ClearingError),
@@ -366,12 +373,6 @@ impl TodoList {
     // * Functions to display the todo list
 
     pub fn display_by_date(&mut self) -> Result<(), TodoFileError>  {
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
 
         // Creating the counter for to display the data
         let mut counter = 0;
@@ -431,12 +432,6 @@ impl TodoList {
 
 
     pub fn display_by_priority(&mut self) -> Result<(), TodoFileError>  {
-
-        // Backup data before reset
-        match self.backup_data() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
 
         // Creating the counter for to display the data
         let mut counter = 0;
